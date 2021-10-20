@@ -244,7 +244,7 @@ def create_directory(directory):
         pass
 
 
-def isNan(value):
+def is_nan(value):
     if value != value or value == '' or value == 'NULL' or value == 'null' or value == 'Null' or value == None:
         result = True
     else:
