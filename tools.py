@@ -242,3 +242,27 @@ def create_directory(directory):
         os.makedirs(directory)
     except FileExistsError:
         pass
+
+
+def isNan(value):
+    if value != value or value == '' or value == 'NULL' or value == 'null' or value == 'Null' or value == None:
+        result = True
+    else:
+        result = False
+
+    return result
+
+
+def list_dir(path, suffix=None):
+
+    if platform.system() == 'Windows':
+        dir = '{}\\'.format(path)
+    else:
+        dir = path
+    
+    files = os.listdir(dir)
+    
+    if suffix:
+        return [ filename for filename in files if filename.endswith( suffix ) ]
+    else:
+        return files
