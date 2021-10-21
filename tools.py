@@ -266,3 +266,7 @@ def list_dir(path, suffix=None):
         return [ filename for filename in files if filename.endswith( suffix ) ]
     else:
         return files
+
+
+def get_downloads_path():
+    return os.path.join(os.path.expanduser("~"), 'Downloads')
