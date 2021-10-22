@@ -106,35 +106,38 @@ def wait(seconds):
     time.sleep(seconds)
 
 
-def wait_file_download(directory=None, timeout=600):
-
-	# Set default Downloads Folder
-	if directory == None:
-			directory = r'C:\Users\{}\Downloads'.format(os.environ['USERNAME'])
-
-	seconds = 0
-	while seconds < timeout:
-
-		try:
-			file_path = sorted(Path(directory).iterdir(), key=os.path.getmtime, reverse=True)[0]
-		except:
-			time.sleep(1)
-			file_path = sorted(Path(directory).iterdir(), key=os.path.getmtime, reverse=True)[0]
-
-		if '.crdownload' in str(file_path):
-			seconds += 1
-			time.sleep(1)
-		else:
-			return True
-
-	raise Exception('Timeout waitFileDownload Function')
+def wait_file_download(directory=None, prefix=None, suffix=None, timeout=600):
 
 
-def get_last_downloaded_file(file_name_prefix='', file_name_sufix=''):
-	directory = r'C:\Users\{}\Downloads\{}*{}'.format(os.environ['USERNAME'], file_name_prefix, file_name_sufix)
-	file_list = glob.glob(directory)
-	
-	return sorted(file_list, key=os.path.getmtime, reverse=True)[0]
+    # Set default Downloads Folder
+    if directory == None:
+        directory = get_downloads_path()
+
+    files = list_dir(path=directory, prefix=prefix, suffix=suffix)
+
+    seconds = 0
+    while seconds < timeout:
+
+        try:
+            file_path = sorted(files, 
+                key=lambda x: os.path.getmtime(os.path.join(directory, x)), 
+                reverse=True)[0]
+        except:
+            pass
+
+        if '.crdownload' in str(file_path):
+            seconds += 1
+            time.sleep(1)
+        else:
+            return True
+
+    raise Exception('Timeout waitFileDownload Function')
+
+
+def get_last_downloaded_file(file_name_prefix=None, file_name_suffix=None):
+    file_list = list_dir(prefix=file_name_prefix, suffix=file_name_suffix)
+    
+    return sorted(file_list, key=os.path.getmtime, reverse=True)[0]
 
 
 def file_is_updated(filepath, referenceDate):
@@ -270,3 +273,7 @@ def list_dir(path, suffix=None):
 
 def get_downloads_path():
     return os.path.join(os.path.expanduser("~"), 'Downloads')
+
+
+def get_file_name_from_path(path):
+    return os.path.basename(path)
