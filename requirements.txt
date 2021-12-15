@@ -1,1 +1,1 @@
-git+git://github.com/Richardbnk/RBSpec.git#egg=elasticutils
+-e git+https://github.com/Richardbnk/RBSpec.git@master#egg=caipyra
