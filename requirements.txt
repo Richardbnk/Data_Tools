@@ -1,1 +1,1 @@
--e git://github.com/Richardbnk/RBSpec.git#egg=RBSpec
+-e git://github.com/Richardbnk/RBSpec@master#egg=RBSpec
