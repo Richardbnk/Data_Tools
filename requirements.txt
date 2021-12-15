@@ -1,1 +1,1 @@
-git+git://github.com/Richardbnk/RBSpec@master
+'git+git://github.com/Richardbnk/RBSpec@master'
