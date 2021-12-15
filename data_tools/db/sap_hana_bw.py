@@ -8,8 +8,11 @@ from numpy import dtype
 from sqlalchemy import String, create_engine
 import os
 import pandas as pd
-from hdbcli import dbapi
 from datetime import datetime
+
+import pyhdb.cesu8
+import codecs
+from urllib.parse import quote
 
 from . import tools
 
@@ -26,7 +29,14 @@ encoding = 'utf8'
 #    password=sh_pass
 #)
 
-engine = create_engine(f'hana://{sh_user}:{sh_pass}@{address}:{port}/?charset={encoding}', echo=False)
+# codec pyhdb fix
+codecs.register(lambda s: (
+	pyhdb.cesu8.CESU8_CODEC_INFO
+	if s in {'cesu-8', 'cesu_8'}
+	else None
+))
+
+engine = create_engine(f'hana+pyhdb://{sh_user}:{sh_pass}@{address}:{port}/?charset={encoding}', echo=False)
 
 
 def run_query(query):
