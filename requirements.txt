@@ -1,1 +1,1 @@
-pip install "git+https://github.com/Richardbnk/RBSpec.git"
+-e git://github.com/Richardbnk/RBSpec.git#egg=RBSpec
