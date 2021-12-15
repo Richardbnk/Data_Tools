@@ -1,1 +1,2 @@
+pandas
 -e git+https://github.com/Richardbnk/RBSpec.git@master#egg=caipyra
