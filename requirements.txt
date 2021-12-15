@@ -1,1 +1,2 @@
 
+git+git+https://github.com/Richardbnk/RBSpec@master
