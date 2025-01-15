@@ -1,20 +1,20 @@
-# data_tools
+# Data Tools library (Python)
 
-## Pacote python com funções referentes a dados
+## Python package for data manipulation from various database systems
 
-### Autor
+### Author
 
-Nome: Richard Raphael Banak
+Name: Richard Raphael Banak
 
-### Instalação
+### Installation
 
-Para instalar o pacote utilize o comando:
+To install the package, use the following command:
 
 ```
 pip install git+https://github.com/Richardbnk/data_tools/
 ```
 
-Para atualizar seu pacote utilize o comando:
+To update your package, use the command:
 
 ```
 pip install --upgrade git+https://github.com/Richardbnk/data_tools/
@@ -22,4 +22,4 @@ pip install --upgrade git+https://github.com/Richardbnk/data_tools/
 
 ### Requirements
 
-Para a utilização completa do pacote, por favor instale todos os requisistos constantes do arquivo `requirements.txt`
+For full use of the package, please install all requirements listed in the `requirements.txt` file.
