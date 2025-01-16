@@ -1,7 +1,19 @@
+"""
+# Developer: Richard Raphael Banak
+# Objective: Functions to help ETL from files and other tools for python automation
+# Creation date: 2020-01-02
+"""
+
+# -*- coding: utf-8 -*-
+
+import sys
 import glob
 import os
 import time
 import pandas as pd
+import platform
+import logging
+import re
 
 from pathlib import Path
 from datetime import datetime, timedelta
@@ -9,7 +21,15 @@ from dateutil.relativedelta import relativedelta
 from shutil import copyfile
 import xlwings as xw
 import json
-
+from dotenv import load_dotenv
+    
+    
+def start_process():
+    global log
+    log = load_log()
+    tools.load_env()
+    return log
+   
 
 def date(delta_days=None, delta_months=None, delta_years=None, date_format="%Y-%m-%d"):
     """
@@ -23,30 +43,29 @@ def date(delta_days=None, delta_months=None, delta_years=None, date_format="%Y-%
     calculated_date = datetime.now()
 
     if delta_days:
-        calculated_date += timedelta(delta_days)
+        calculated_date = calculated_date + timedelta(delta_days)
 
     if delta_months:
-        calculated_date += relativedelta(months=delta_months)
+        calculated_date = calculated_date + relativedelta(months=delta_months)
 
     if delta_years:
-        calculated_date += relativedelta(years=delta_years)
+        calculated_date = calculated_date + relativedelta(years=delta_years)
 
-    return calculated_date.strftime(date_format)
+    if date_format:
+        calculated_date = calculated_date.strftime(date_format)
+
+    return calculated_date
 
 
 def convert_date_to_datetime(date, origin_format="%Y-%m-%d"):
-    """
-    Converts a date string to a datetime object.
-    """
+
     return datetime.strptime(date, origin_format)
 
 
 def convert_datetime_to_format(
     date, origin_format="%Y-%m-%d", destination_format="%d/%m/%Y"
 ):
-    """
-    Converts a datetime object or date string to a different format.
-    """
+
     return convert_date_to_datetime(date=date, origin_format=origin_format).strftime(
         destination_format
     )
@@ -64,9 +83,6 @@ def export_dataframe_to_csv(
     quoting=None,
     float_format=None,
 ):
-    """
-    Exports a DataFrame to a CSV file.
-    """
 
     dataframe.to_csv(
         path_or_buf=filepath,
@@ -90,9 +106,6 @@ def export_dataframe_to_excel(
     sheet_name="Sheet1",
     date_format="YYYY-MM-DD",
 ):
-    """
-    Exports a DataFrame to an Excel file.
-    """
 
     writer = pd.ExcelWriter(path=filepath, datetime_format=date_format)
 
@@ -109,107 +122,93 @@ def export_dataframe_to_excel(
 
 
 def read_csv_file(filepath, sep=";", encoding=None, engine="python"):
-    """
-    Reads a CSV file into a DataFrame.
-    """
+
     return pd.read_csv(
         filepath_or_buffer=filepath, sep=sep, encoding=encoding, engine=engine
     )
 
 
 def read_excel_file(filepath, converters=None, dtype=None):
-    """
-    Reads an Excel file into a DataFrame.
-    """
+
     return pd.read_excel(io=filepath, converters=converters, dtype=dtype)
 
 
 def read_html_file(filepath):
-    """
-    Reads tables from an HTML file into DataFrames.
-    """
     return pd.read_html(io=filepath)
 
 
 def copy_file(origin_file, destination_file):
-    """
-    Copies a file to a new location.
-    """
+
     copyfile(origin_file, destination_file)
 
 
 def move_file(origin_file, destination_file):
-    """
-    Moves a file to a new location.
-    """
+
     copyfile(origin_file, destination_file)
     os.remove(origin_file)
 
 
 def delete_file(filepath):
-    """
-    Deletes a file.
-    """
+
     os.remove(filepath)
 
 
 def wait(seconds):
-    """
-    Waits for the specified number of seconds.
-    """
+
     time.sleep(seconds)
 
 
 def wait_file_download(directory=None, prefix=None, suffix=None, timeout=600):
-    """
-    Waits until a file download completes.
-    """
+
+    # Set default Downloads Folder
     if directory == None:
         directory = get_downloads_path()
-
-    files = list_dir(path=directory, prefix=prefix, suffix=suffix)
 
     seconds = 0
     while seconds < timeout:
 
         try:
             file_path = sorted(
-                files,
+                list_dir(path=directory, prefix=prefix, suffix=suffix),
                 key=lambda x: os.path.getmtime(os.path.join(directory, x)),
                 reverse=True,
             )[0]
         except:
             pass
 
+        seconds += 1
+
         if ".crdownload" in str(file_path):
-            seconds += 1
             time.sleep(1)
         else:
             return True
 
-    raise Exception("Timeout waiting for file download.")
+    raise Exception("Timeout waitFileDownload Function")
 
 
-def get_last_downloaded_file(file_name_prefix=None, file_name_suffix=None):
-    """
-    Retrieves the most recently downloaded file.
-    """
-    file_list = list_dir(prefix=file_name_prefix, suffix=file_name_suffix)
-    return sorted(file_list, key=os.path.getmtime, reverse=True)[0]
+def get_last_downloaded_file(path=None, prefix=None, suffix=None):
+    if not path:
+        path = get_downloads_path()
+
+    file_list = list_dir(path=path, prefix=prefix, suffix=suffix)
+
+    last_file_name = sorted(
+        file_list, key=lambda x: os.path.getmtime(os.path.join(path, x)), reverse=True
+    )[0]
+
+    return os.path.join(path, last_file_name)
 
 
-def file_is_updated(filepath, referenceDate):
-    """
-    Checks if a file has been updated since a reference date.
-    """
-    date = datetime.fromtimestamp(os.path.getctime(filepath)).strftime("%Y-%m-%d")
+def check_file_is_updated(filePath, referenceDate):
+
+    date = datetime.fromtimestamp(os.path.getmtime(filePath)).strftime("%Y-%m-%d")
 
     if date >= referenceDate:
         return True
     else:
         return False
 
-
+    
 def file_to_dataframe(
     filepath, encoding=None, engine="python", converters=None, dtype=None
 ):
@@ -243,51 +242,55 @@ def return_dataframe_from_restricted_excel(filepath, sheet, cells_range):
     """
     wb = xw.Book(filepath)
     sheet = wb.sheets[sheet]
-    return sheet[cells_range].options(pd.DataFrame, index=False, header=True).value
+    df = sheet[cells_range].options(pd.DataFrame, index=False, header=True).value
+
+    return df
 
 
 def data_frame_to_clipboard(dataFrame, sep=",", index=False, header=False):
-    """
-    Copies a DataFrame to the clipboard.
-    """
     dataFrame.to_clipboard(sep=sep, index=index, header=header)
 
 
 def get_json(file):
-    """
-    Loads a JSON file.
-    """
-    return json.loads(open(file).read())
+    parametros = json.loads(open(file).read())
+
+    return parametros
 
 
 def get_json_value(json, key):
-    """
-    Retrieves a value from a JSON object by key.
-    """
     return json[key]
 
 
 def is_nan(value):
-    """
-    Checks if a value is NaN or empty.
-    """
-    return value != value or value in ("", "NULL", "null", None)
+    if (
+        value != value
+        or value == ""
+        or value == "NULL"
+        or value == "null"
+        or value == "Null"
+        or value == None
+    ):
+        result = True
+    else:
+        result = False
+
+    return result
 
 
 def add_quotation_mark(value):
-    """
-    Adds quotation marks around a value.
-    """
+
     if value != "NULL":
+        # remove all Single Quotation Marks
         value = str(value).replace("'", "")
-        return "'{}'".format(value)
+
+        # add HANA String Quotation Marks around the value
+        value = "'{}'".format(value)
+
     return value
 
 
 def convert_number_to_datetime(number):
-    """
-    Converts an Excel date number to a datetime object.
-    """
+
     try:
         date = datetime.fromordinal(datetime(1900, 1, 1).toordinal() + int(number) - 2)
         # hour, minute, second = floatHourToTime(date % 1)
@@ -305,43 +308,105 @@ def convert_number_to_datetime(number):
     return date
 
 
+def convert_datetime_to_format(
+    date, origin_format="%Y-%m-%d", destination_format="%d/%m/%Y"
+):
+    return convert_date_to_datetime(date=date, origin_format=origin_format).strftime(
+        destination_format
+    )
+
+
+
 def get_file_creation_date(filepath, dateFormat):
-    """
-    Retrieves a file's creation date.
-    """
-    date = datetime.fromtimestamp(os.path.getctime(filepath))
-    if dateFormat:
-        return date.strftime(dateFormat)
+
+    if dateFormat == None:
+
+        date = datetime.fromtimestamp(os.path.getctime(filepath))
+    else:
+
+        date = datetime.strptime(
+            str(datetime.fromtimestamp(os.path.getctime(filepath)))[:10], "%Y-%m-%d"
+        ).strftime(dateFormat)
     return date
 
 
 def create_directory(directory):
-    """
-    Creates a directory if it does not exist.
-    """
     try:
         os.makedirs(directory)
     except FileExistsError:
         pass
 
 
-def list_dir(path, suffix=None):
-    """
-    Lists files in a directory with optional suffix filtering.
-    """
-    files = os.listdir(path)
-    return [filename for filename in files if not suffix or filename.endswith(suffix)]
+def is_nan(value):
+    if (
+        value != value
+        or value == ""
+        or value == "NULL"
+        or value == "null"
+        or value == "Null"
+        or value == None
+    ):
+        result = True
+    else:
+        result = False
+
+    return result
+
+
+def list_dir(path, prefix=None, suffix=None):
+
+    if platform.system() == "Windows":
+        dir = "{}\\".format(path)
+    else:
+        dir = path
+
+    files = os.listdir(dir)
+
+    if prefix:
+        files = [filename for filename in files if filename.startswith(prefix)]
+
+    if suffix:
+        files = [filename for filename in files if filename.endswith(suffix)]
+
+    return files
+
 
 
 def get_downloads_path():
-    """
-    Returns the system's default downloads directory.
-    """
     return os.path.join(os.path.expanduser("~"), "Downloads")
 
 
 def get_file_name_from_path(path):
-    """
-    Retrieves the file name from a file path.
-    """
     return os.path.basename(path)
+
+
+def load_env(path=None):
+    """
+    Loads environment variables from a .env file.
+    """
+    if not path:
+        path = os.path.join(os.path.expanduser('~'), 'Repositories', 'files', '.env')
+    load_dotenv(dotenv_path=Path(path))
+
+
+def load_log():
+    """
+    Sets up and returns a logger with a predefined format and DEBUG level.
+    """
+    formatter = logging.Formatter('%(levelname)s: %(asctime)s - %(message)s')
+    logger = logging.getLogger()
+
+    ch3 = logging.StreamHandler()
+    ch3.setLevel(logging.DEBUG)
+    ch3.setFormatter(formatter)
+    logger.addHandler(ch3)
+
+    logger.setLevel(logging.DEBUG)
+    return logger
+
+
+def get_numbers_from_string(string):
+    """
+    Extracts all numbers from a string.
+    """
+    return re.findall(r'\d+', string)
