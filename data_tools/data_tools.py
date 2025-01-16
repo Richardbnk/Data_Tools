@@ -22,14 +22,7 @@ from shutil import copyfile
 import xlwings as xw
 import json
 from dotenv import load_dotenv
-    
-    
-def start_process():
-    global log
-    log = load_log()
-    tools.load_env()
-    return log
-   
+
 
 def date(delta_days=None, delta_months=None, delta_years=None, date_format="%Y-%m-%d"):
     """
