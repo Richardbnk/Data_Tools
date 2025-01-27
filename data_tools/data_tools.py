@@ -1,6 +1,8 @@
 """
 # Developer: Richard Raphael Banak
-# Objective: Functions to help ETL from files and other tools for python automation
+# Objective: This module provides utility functions to streamline ETL processes, 
+             file handling, date manipulations, and automation in Python, 
+             specifically designed to assist with data engineering tasks.
 # Creation date: 2020-01-02
 """
 
